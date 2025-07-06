@@ -12,20 +12,29 @@ all: examples
 
 examples: config.o csv.o
 
-config.o: examples/config.cpp
+config.o: \
+		rododendrs \
+		examples/config.cpp
 	g++ -Wall -Wextra -Werror -Wpedantic \
 		-std=c++20 -O3 \
 		-I./include \
+		-I./rododendrs/include \
 		examples/config.cpp -o $@
 
 csv.o: \
+		rododendrs \
 		examples/csv.cpp \
 		examples/data_struct.csv \
 		examples/data_vector.csv
 	g++ -Wall -Wextra -Werror -Wpedantic \
 		-std=c++20 -O3 \
 		-I./include \
+		-I./rododendrs/include \
 		examples/csv.cpp -o $@
+
+rododendrs:
+	git clone git@github.com:viktorsboroviks/rododendrs.git
+	cd rododendrs; git checkout v1.32
 
 format: format-cpp format-json
 
@@ -47,7 +56,6 @@ lint-cpp: \
 	cppcheck \
 		--enable=warning,portability,performance \
 		--enable=style,information \
-		--enable=missingInclude \
 		--inconclusive \
 		--library=std,posix,gnu \
 		--platform=unix64 \
@@ -55,7 +63,6 @@ lint-cpp: \
 		--std=c++20 \
 		--inline-suppr \
 		--check-level=exhaustive \
-		--suppress=missingIncludeSystem \
 		--suppress=checkersReport \
 		--checkers-report=cppcheck_report.txt \
 		-I./include \
@@ -63,3 +70,6 @@ lint-cpp: \
 
 clean:
 	rm -rf `find . -name "*.o"`
+
+distclean: clean
+	rm -rf rododendrs

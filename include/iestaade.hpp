@@ -6,13 +6,11 @@
 #include <string>
 #include <vector>
 
+#include "rododendrs.hpp"
+
 namespace iestaade {
 
-const char KEY_PATH_DELIMITER    = '/';
-const bool DEFAULT_BOOL          = false;
-const double DEFAULT_DOUBLE      = -1.0;
-const size_t DEFAULT_SIZE_T      = SIZE_T_MAX;
-const std::string DEFAULT_STRING = "undefined";
+const char KEY_PATH_DELIMITER = '/';
 
 boost::json::value value_from_json(const std::string& file_path,
                                    const std::string& key_path)
@@ -45,77 +43,51 @@ boost::json::value value_from_json(const std::string& file_path,
     return v;
 }
 
-bool bool_from_json(const std::string& file_path,
-                    const std::string& key_path,
-                    bool optional      = false,
-                    bool default_value = DEFAULT_BOOL)
+template <typename T>
+const T from_json(const std::string& file_path,
+                  const std::string& key_path,
+                  bool optional          = false,
+                  const T& default_value = T())
 {
-    bool v;
     try {
-        v = value_from_json(file_path, key_path).get_bool();
-    }
-    catch (const std::runtime_error& e) {
-        if (!optional) {
-            return default_value;
+        const boost::json::value json_v = value_from_json(file_path, key_path);
+        if constexpr (std::is_same_v<T, bool>) {
+            return json_v.get_bool();
         }
-        throw;
+        else if constexpr (std::is_arithmetic_v<T>) {
+            return json_v.to_number<T>();
+        }
+        else if constexpr (std::is_same_v<T, std::string>) {
+            return json_v.as_string().c_str();
+        }
+        else if constexpr (rododendrs::is_range_v<T>) {
+            // T = rododendrs::Range<U>
+            using U = rododendrs::range_value_type_t<T>;
+            T v;
+            if (json_v.as_object().if_contains("min")) {
+                v.min = json_v.at("min").to_number<U>();
+            }
+            if (json_v.as_object().if_contains("max")) {
+                v.max = json_v.at("max").to_number<U>();
+            }
+            if (json_v.as_object().if_contains("step_min")) {
+                v.step_min = json_v.at("step_min").to_number<U>();
+            }
+            if (json_v.as_object().if_contains("step_max")) {
+                v.step_max = json_v.at("step_max").to_number<U>();
+            }
+            return v;
+        }
+        else {
+            throw std::runtime_error("unsupported type for from_json");
+        }
     }
-    return v;
-}
-
-double double_from_json(const std::string& file_path,
-                        const std::string& key_path,
-                        bool optional        = false,
-                        double default_value = DEFAULT_BOOL)
-{
-    double v;
-    try {
-        v = value_from_json(file_path, key_path).to_number<double>();
-    }
-    catch (const std::runtime_error& e) {
+    catch (const std::runtime_error&) {
         if (optional) {
             return default_value;
         }
         throw;
     }
-    return v;
-}
-
-size_t size_t_from_json(const std::string& file_path,
-                        const std::string& key_path,
-                        bool optional        = false,
-                        size_t default_value = DEFAULT_SIZE_T)
-{
-    size_t v;
-    try {
-        v = value_from_json(file_path, key_path).to_number<size_t>();
-    }
-    catch (const std::runtime_error& e) {
-        if (optional) {
-            return default_value;
-        }
-        throw;
-    }
-    return v;
-}
-
-const std::string string_from_json(
-        const std::string& file_path,
-        const std::string& key_path,
-        bool optional                    = false,
-        const std::string& default_value = DEFAULT_STRING)
-{
-    std::string v;
-    try {
-        v = value_from_json(file_path, key_path).as_string().c_str();
-    }
-    catch (const std::runtime_error& e) {
-        if (optional) {
-            return default_value;
-        }
-        throw;
-    }
-    return v;
 }
 
 /**

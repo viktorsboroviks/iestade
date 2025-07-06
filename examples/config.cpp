@@ -13,18 +13,18 @@ struct MySettings {
     MySettings() {}
 
     explicit MySettings(const std::string& config_filepath) :
-        init_p_acceptance(iestaade::double_from_json(config_filepath,
+        init_p_acceptance(iestaade::from_json<double>(config_filepath,
+                                                      "run_engine/"
+                                                      "simulated_annealing/"
+                                                      "init_p_acceptance")),
+        data_size(iestaade::from_json<size_t>(config_filepath,
+                                              "run_engine/"
+                                              "state/"
+                                              "data_size")),
+        date_format(iestaade::from_json<std::string>(config_filepath,
                                                      "run_engine/"
-                                                     "simulated_annealing/"
-                                                     "init_p_acceptance")),
-        data_size(iestaade::size_t_from_json(config_filepath,
-                                             "run_engine/"
-                                             "state/"
-                                             "data_size")),
-        date_format(iestaade::string_from_json(config_filepath,
-                                               "run_engine/"
-                                               "report/"
-                                               "date_format"))
+                                                     "report/"
+                                                     "date_format"))
     {
     }
 };
